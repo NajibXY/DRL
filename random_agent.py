@@ -1,5 +1,7 @@
 import argparse
 import torch
+import random
+import sys
 import gym
 from gym import wrappers, logger
 import matplotlib.pyplot as plt
@@ -11,6 +13,37 @@ class RandomAgent(object):
 
     def act(self, observation, reward, done):
         return self.action_space.sample()
+
+
+class Interaction:
+
+    def __init__(self,e,a,s,r,f):
+        self.e = e
+        self.a = a
+        self.s = s
+        self.r = r
+        self.f = f
+
+
+class Buffer:
+
+    def __init__(self, size):
+        self.size = size
+        self.buffr = []
+
+    def append(self, interaction):
+        if len(self.buffr) >= self.size:
+            self.buffr.pop(0)
+        self.buffr.append(interaction)
+
+    def sample(self, n):
+        if n > len(self.buffr):
+            n = len(self.buffr)
+        return random.sample(self.buffr, n)
+
+    def length(self):
+        return len(self.buffr)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=None)
@@ -38,20 +71,27 @@ if __name__ == '__main__':
 
     rewards = []
 
+    r_buffer = Buffer(1000)
+
     for i in range(episode_count):
         ob = env.reset()
         step = 0
         reward_tot = 0
         while True:
+            state = ob
             action = agent.act(ob, reward, done)
             ob, reward, done, _ = env.step(action)
             reward_tot = reward_tot + reward
+            interaction = Interaction(state, action, ob, reward, done)
+            r_buffer.append(interaction)
+
+            # print(len(r_buffer.sample(5)))
             if done:
                 break
             # Note there's no env.render() here. But the environment still can open window and
             # render if asked by env.monitor: it calls env.render('rgb_array') to record video.
             # Video is not recorded every episode, see capped_cubic_video_schedule for details.
-            rewards.append(reward_tot)
+        rewards.append(reward_tot)
 
     # Affichage de l'évolution de la récompense
     fig = plt.figure()
