@@ -1,9 +1,10 @@
 import argparse
-import torch
+
 import random
-import sys
+
 import gym
 from gym import wrappers, logger
+
 import matplotlib.pyplot as plt
 
 class RandomAgent(object):
